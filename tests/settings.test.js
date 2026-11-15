@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isBlocked } from "../lib/settings.js";
+import { isBlocked } from "../src/lib/settings.js";
 
 test("isBlocked: subdomain of a blocked host", () => {
   assert.equal(isBlocked("jobs.example.com", ["example.com"]), true);

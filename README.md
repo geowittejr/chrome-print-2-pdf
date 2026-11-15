@@ -9,7 +9,7 @@ Plain JavaScript, no dependencies, no build step.
 
 1. Open `chrome://extensions`.
 2. Turn on **Developer mode** (top right).
-3. Click **Load unpacked** and pick this `chrome-print-2-pdf` folder.
+3. Click **Load unpacked** and pick the `src` folder of this repository (the one holding `manifest.json`).
 4. Reload any tabs that were already open, so the button appears on them.
 5. Optional: pin the extension from the puzzle-piece menu to reach the popup quickly.
 

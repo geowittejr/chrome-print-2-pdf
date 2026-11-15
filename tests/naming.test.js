@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildFileName, cleanTitle, formatTimestamp, validateFolder } from "../lib/naming.js";
-import { DEFAULTS } from "../lib/settings.js";
+import { buildFileName, cleanTitle, formatTimestamp, validateFolder } from "../src/lib/naming.js";
+import { DEFAULTS } from "../src/lib/settings.js";
 
 // 2026-11-15 13:06:42 local time.
 const DATE = new Date(2026, 10, 15, 13, 6, 42);

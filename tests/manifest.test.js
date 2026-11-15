@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const root = join(dirname(fileURLToPath(import.meta.url)), "..", "src");
 
 test("manifest.json parses and every file it names exists", () => {
   const manifest = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
