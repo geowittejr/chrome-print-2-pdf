@@ -1,5 +1,5 @@
 {
-  "name": "save-pdf-extension",
+  "name": "chrome-print-2-pdf",
   "version": "1.0.0",
   "private": true,
   "description": "One-click print-to-PDF Chrome extension (Manifest V3, load unpacked).",

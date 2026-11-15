@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Save PDF",
+  "name": "chrome-print-2-pdf",
   "version": "1.0.0",
   "description": "One click saves the current page as a PDF under your Downloads folder.",
   "permissions": ["debugger", "downloads", "storage", "offscreen"],
