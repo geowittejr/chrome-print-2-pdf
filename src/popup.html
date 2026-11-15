@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Save PDF</title>
+    <style>
+      body {
+        font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+        margin: 0;
+        padding: 12px 14px;
+        width: 240px;
+        color: #202124;
+        background: #fff;
+      }
+      label { display: flex; align-items: center; gap: 8px; margin: 6px 0; cursor: pointer; }
+      label.disabled { color: #9aa0a6; cursor: default; }
+      button {
+        width: 100%;
+        margin-top: 10px;
+        padding: 7px 10px;
+        font: inherit;
+        font-weight: 600;
+        color: #fff;
+        background: #1a73e8;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:disabled { background: #5f6368; cursor: progress; }
+      #unsupported { margin-top: 10px; color: #5f6368; }
+      #status { margin-top: 8px; font-size: 12px; word-break: break-all; }
+      #status.error { color: #c5221f; }
+      #status.ok { color: #188038; }
+      .footer { margin-top: 10px; border-top: 1px solid #e8eaed; padding-top: 8px; }
+      a { color: #1a73e8; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <label><input type="checkbox" id="enabled" /> Show the button on sites</label>
+    <label id="hide-label"><input type="checkbox" id="hide-site" /> Hide on this site</label>
+    <button type="button" id="save" hidden>Save this page</button>
+    <div id="unsupported" hidden>This page can't be saved</div>
+    <div id="status"></div>
+    <div class="footer"><a href="#" id="options">Options</a></div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
