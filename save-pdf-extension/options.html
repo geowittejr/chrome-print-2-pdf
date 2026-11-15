@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Save PDF options</title>
+    <style>
+      body {
+        font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: #202124;
+        background: #fff;
+        max-width: 640px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+      h1 { font-size: 20px; margin: 0 0 16px; }
+      h2 { font-size: 15px; margin: 24px 0 8px; border-bottom: 1px solid #e8eaed; padding-bottom: 4px; }
+      .field { margin: 10px 0; }
+      .field > label { display: block; font-weight: 600; margin-bottom: 4px; }
+      .inline { display: flex; align-items: center; gap: 8px; font-weight: normal; }
+      input[type="text"], select, textarea {
+        font: inherit;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 5px 8px;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+      }
+      textarea { min-height: 90px; font-family: ui-monospace, Consolas, monospace; }
+      input.invalid { border-color: #c5221f; }
+      .hint { color: #5f6368; font-size: 12px; }
+      .error { color: #c5221f; font-size: 12px; }
+      code { background: #f1f3f4; padding: 1px 4px; border-radius: 3px; }
+      .preview { background: #f1f3f4; padding: 8px 10px; border-radius: 4px; word-break: break-all; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>Save PDF options</h1>
+
+    <h2>Button</h2>
+    <div class="field">
+      <label class="inline"><input type="checkbox" id="enabled" /> Show the button on sites</label>
+    </div>
+    <div class="field">
+      <label for="position">Button position</label>
+      <select id="position">
+        <option value="top-left">Top left</option>
+        <option value="top-center">Top center</option>
+        <option value="top-right">Top right</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="blocklist">Blocked sites</label>
+      <textarea id="blocklist" spellcheck="false"></textarea>
+      <div class="hint">One host per line. <code>example.com</code> also blocks its subdomains.</div>
+    </div>
+
+    <h2>Saving</h2>
+    <div class="field">
+      <label for="folder">Save folder (inside Downloads)</label>
+      <input type="text" id="folder" spellcheck="false" />
+      <div class="error" id="folder-error" hidden></div>
+      <div class="hint">Nested folders such as <code>Work/PDFs</code> are allowed. Leave empty for Downloads itself.</div>
+    </div>
+    <div class="field">
+      <label for="template">File name template</label>
+      <input type="text" id="template" spellcheck="false" />
+      <div class="hint">Tokens: <code>{timestamp}</code> <code>{title}</code> <code>{domain}</code> <code>{date}</code> <code>{time}</code></div>
+    </div>
+    <div class="field">
+      <label for="timestampFormat">Timestamp format</label>
+      <input type="text" id="timestampFormat" spellcheck="false" />
+      <div class="hint">Tokens: <code>yyyy</code> <code>yy</code> <code>MM</code> <code>dd</code> <code>HH</code> <code>mm</code> <code>ss</code> (local time)</div>
+    </div>
+    <div class="field">
+      <label for="conflict">If the file exists</label>
+      <select id="conflict">
+        <option value="uniquify">Add a counter</option>
+        <option value="overwrite">Overwrite</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Preview</label>
+      <div class="preview" id="preview"></div>
+      <div class="hint" id="saves-to"></div>
+    </div>
+
+    <h2>PDF</h2>
+    <div class="field">
+      <label for="paper">Paper size</label>
+      <select id="paper">
+        <option value="letter">Letter</option>
+        <option value="a4">A4</option>
+        <option value="legal">Legal</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="inline"><input type="checkbox" id="landscape" /> Landscape</label>
+      <label class="inline"><input type="checkbox" id="printBackground" /> Print backgrounds</label>
+      <label class="inline"><input type="checkbox" id="headerFooter" /> Header and footer</label>
+    </div>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
