@@ -22,6 +22,14 @@ Open questions and decisions made while building, per the plan's instructions.
 - The popup sends its tab id with `save-pdf` so it saves the tab it was opened on; without one, the worker
   falls back to the active tab of the last focused window.
 
+## Features To Consider
+
+- **Print to Markdown, HTML, or PDF** - present the option to choose the format.
+- **Select Content Container** - allow the user to select the content container to print
+  - [Find the main content body in a web page](https://share.google/aimode/Nc97fyBuRlWX91j8N)
+- **Use React, Vite, Tailwind CSS** - hit all the latest tech that I care about
+  - [Create Extension Using React](https://share.google/aimode/blmy4rfn3PkK6OSfb)
+
 ## Open questions / to verify in Chrome
 
 - **Debugger bar**: how long it stays after detach, and whether `--silent-debugger-extension-api` hides it.
