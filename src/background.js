@@ -2,10 +2,13 @@
 import { buildFileName, hostFromUrl, validateFolder } from "./lib/naming.js";
 import { PAPER_SIZES, DEFAULTS, canCapture, getSettings, isBlocked } from "./lib/settings.js";
 import { buildExpandExpression } from "./lib/expand.js";
+import { MARGIN_IN, continuousPaper, countPdfPages, paperDimensions, printablePx } from "./lib/pagesize.js";
 
 const OFFSCREEN_URL = "offscreen.html";
 const DOWNLOAD_TIMEOUT_MS = 5 * 60 * 1000;
 const EXPAND_TIMEOUT_MS = 15 * 1000;
+/** Prints tried for a continuous PDF before keeping one that still has more than one page. */
+const CONTINUOUS_ATTEMPTS = 3;
 
 /** Tab ids with a save in progress. */
 const savingTabs = new Set();
@@ -105,20 +108,87 @@ async function printTab(tabId, settings) {
   }
   try {
     if (settings.expandContent) await expandContent(target);
-    const result = await chrome.debugger.sendCommand(target, "Page.printToPDF", {
-      landscape: Boolean(settings.landscape),
+    const common = {
       displayHeaderFooter: Boolean(settings.headerFooter),
       printBackground: Boolean(settings.printBackground),
+      transferMode: "ReturnAsBase64",
+    };
+    if (settings.continuous) return await printContinuous(target, paper, settings, common);
+    return await printToPdf(target, {
+      ...common,
+      landscape: Boolean(settings.landscape),
       paperWidth: paper.width,
       paperHeight: paper.height,
-      transferMode: "ReturnAsBase64",
     });
-    if (!result?.data) throw new Error("Chrome returned no PDF data.");
-    return result.data;
   } finally {
     await chrome.debugger.detach(target).catch(() => {});
   }
 }
+
+async function printToPdf(target, params) {
+  const result = await chrome.debugger.sendCommand(target, "Page.printToPDF", params);
+  if (!result?.data) throw new Error("Chrome returned no PDF data.");
+  return result.data;
+}
+
+/**
+ * Print the whole page onto one tall PDF page. The page is measured as it lays out for print at the
+ * paper's width, then printed on paper exactly that tall. If the measurement came up short (print
+ * layout can differ from what the page reports), the height grows and it prints again.
+ */
+async function printContinuous(target, paper, settings, common) {
+  const { width: minWidthIn, height: fallbackHeightIn } = paperDimensions(paper, settings.landscape);
+  const size = await measureForPrint(target, printablePx(minWidthIn), printablePx(fallbackHeightIn));
+  const { paperWidth, paperHeight } = continuousPaper({ minWidthIn, ...size });
+  const params = { ...common, landscape: false, paperWidth, marginTop: MARGIN_IN, marginBottom: MARGIN_IN,
+    marginLeft: MARGIN_IN, marginRight: MARGIN_IN };
+
+  let height = paperHeight;
+  let data;
+  for (let attempt = 1; attempt <= CONTINUOUS_ATTEMPTS; attempt++) {
+    data = await printToPdf(target, { ...params, paperHeight: height });
+    const pages = countPdfPages(atob(data));
+    if (pages <= 1) break;
+    // First retry: a little taller, for a small overflow. Then tall enough for every page printed.
+    height = Math.ceil(attempt === 1 ? height * 1.1 + 1 : height * pages);
+  }
+  return data;
+}
+
+/**
+ * Lay the page out with print styles at `widthPx` CSS pixels wide and return its content size.
+ * The emulation is cleared afterwards. On failure it returns one paper page's height, and the retries in
+ * printContinuous grow the page from there.
+ */
+async function measureForPrint(target, widthPx, fallbackHeightPx) {
+  const send = (method, params) => chrome.debugger.sendCommand(target, method, params);
+  try {
+    await send("Emulation.setEmulatedMedia", { media: "print" });
+    await send("Emulation.setDeviceMetricsOverride", { width: widthPx, height: 0, deviceScaleFactor: 0, mobile: false });
+    const result = await send("Runtime.evaluate", { expression: MEASURE_EXPRESSION, returnByValue: true });
+    const value = result?.result?.value;
+    if (!value || !(value.height > 0)) throw new Error("no size returned");
+    return { contentWidthPx: Math.max(widthPx, value.width), contentHeightPx: value.height };
+  } catch (err) {
+    console.warn("Measuring the page failed:", errorText(err));
+    return { contentWidthPx: widthPx, contentHeightPx: fallbackHeightPx };
+  } finally {
+    await send("Emulation.clearDeviceMetricsOverride").catch(() => {});
+    await send("Emulation.setEmulatedMedia", { media: "" }).catch(() => {});
+  }
+}
+
+/**
+ * Page code: the document's content size. scrollHeight never reports less than the window height,
+ * so for a short page the <html> box height is used instead.
+ */
+const MEASURE_EXPRESSION = `(() => {
+  const de = document.documentElement;
+  const body = document.body;
+  let height = Math.max(de.getBoundingClientRect().height, body ? body.scrollHeight : 0);
+  if (de.scrollHeight > window.innerHeight + 1) height = Math.max(height, de.scrollHeight);
+  return { width: Math.ceil(de.scrollWidth), height: Math.ceil(height) };
+})()`;
 
 /**
  * Reveal collapsed text (line clamps, "see more" buttons, <details>, accordions) so it prints.

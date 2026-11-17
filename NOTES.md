@@ -37,6 +37,21 @@ Open questions and decisions made while building, per the plan's instructions.
   unclamping works in any language. Unclamping can enlarge overflow-hidden boxes that crop images if they also
   contain text. The page is not restored after saving.
 
+## Continuous (single-page) PDFs
+
+- On by default (`continuous` setting). Removes the blank gaps that page breaks leave when the browser pushes a
+  block that won't fit to the next page.
+- Uses the debugger that is already attached, after expanding content: emulate `print` media and set the
+  viewport to the paper's printable width (`Emulation.setDeviceMetricsOverride`), measure the document height
+  in the page, clear both, then `Page.printToPDF` with that height and 0.4 in margins. `lib/pagesize.js` holds
+  the size maths.
+- Print layout can differ from the measurement, so the worker counts `/Type /Page` objects in the result. With
+  more than one page it prints again taller (x1.1 + 1 in, then x page count), at most 3 prints in all.
+- Known limits: elements sized in `vh` grow to the tall page's height in print, which can leave blank space or
+  keep a second page. Very tall pages (over 200 in) are valid PDF but some viewers, Acrobat among them, cap
+  page size at 200 in. Pages that scroll inside an inner container rather than the document still print only
+  what that container shows, as before.
+
 ## Features To Consider
 
 - **Print to Markdown, HTML, or PDF** - present the option to choose the format.
