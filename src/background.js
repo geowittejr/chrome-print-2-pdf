@@ -1,9 +1,11 @@
 // Service worker: message router and the save pipeline.
 import { buildFileName, hostFromUrl, validateFolder } from "./lib/naming.js";
 import { PAPER_SIZES, DEFAULTS, canCapture, getSettings, isBlocked } from "./lib/settings.js";
+import { buildExpandExpression } from "./lib/expand.js";
 
 const OFFSCREEN_URL = "offscreen.html";
 const DOWNLOAD_TIMEOUT_MS = 5 * 60 * 1000;
+const EXPAND_TIMEOUT_MS = 15 * 1000;
 
 /** Tab ids with a save in progress. */
 const savingTabs = new Set();
@@ -102,6 +104,7 @@ async function printTab(tabId, settings) {
     throw new Error(`Couldn't attach to the page: ${errorText(err)}`);
   }
   try {
+    if (settings.expandContent) await expandContent(target);
     const result = await chrome.debugger.sendCommand(target, "Page.printToPDF", {
       landscape: Boolean(settings.landscape),
       displayHeaderFooter: Boolean(settings.headerFooter),
@@ -114,6 +117,33 @@ async function printTab(tabId, settings) {
     return result.data;
   } finally {
     await chrome.debugger.detach(target).catch(() => {});
+  }
+}
+
+/**
+ * Reveal collapsed text (line clamps, "see more" buttons, <details>, accordions) so it prints.
+ * Best effort: a failure or timeout is logged and the save goes ahead with the page as it is.
+ */
+async function expandContent(target) {
+  const evaluate = chrome.debugger.sendCommand(target, "Runtime.evaluate", {
+    expression: buildExpandExpression(),
+    awaitPromise: true,
+    returnByValue: true,
+    userGesture: true,
+  });
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error("timed out")), EXPAND_TIMEOUT_MS);
+  });
+  try {
+    const result = await Promise.race([evaluate, timeout]);
+    if (result?.exceptionDetails) {
+      console.warn("Expanding content failed:", result.exceptionDetails.exception?.description ?? result.exceptionDetails.text);
+    }
+  } catch (err) {
+    console.warn("Expanding content failed:", errorText(err));
+  } finally {
+    clearTimeout(timer);
   }
 }
 

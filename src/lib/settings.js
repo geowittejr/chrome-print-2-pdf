@@ -12,6 +12,7 @@ export const DEFAULTS = Object.freeze({
   landscape: false,
   printBackground: true,
   headerFooter: false,
+  expandContent: true,
 });
 
 /** Paper sizes in inches for Page.printToPDF paperWidth/paperHeight. */

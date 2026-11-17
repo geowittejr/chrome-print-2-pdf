@@ -24,7 +24,13 @@ a save dialog on every PDF. Turn it off for one-click saving.
   where the button is hidden.
 - **Keyboard**: Alt+Shift+S saves the active tab. Change it at `chrome://extensions/shortcuts`.
 - **Options** (popup → Options): folder, file name template, timestamp format, what to do when the file exists,
-  button position, blocked sites, paper size, landscape, backgrounds, header and footer.
+  button position, blocked sites, paper size, landscape, backgrounds, header and footer, and whether to expand
+  collapsed text before saving (on by default).
+
+Before printing, the extension expands collapsed text on the page so it ends up in the PDF. It lifts "see more"
+line clamps and height limits, opens `<details>` sections, and clicks collapsed toggles and "show more" buttons.
+It never follows links to other pages, submits forms, or clicks "load more" or menu buttons. The page stays
+expanded after the save.
 
 Files land at `Downloads/<folder>/<name>.pdf`. With defaults that is, for example,
 `Downloads/PDFs/20261115-130642.Senior-Software-Engineer-Acme-Careers.pdf`.

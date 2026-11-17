@@ -6,7 +6,7 @@ const $ = (id) => document.getElementById(id);
 const SAMPLE_TITLE = "Senior Software Engineer - Acme Careers";
 const SAMPLE_URL = "https://www.example.com/jobs/123";
 
-const CHECKBOXES = ["enabled", "landscape", "printBackground", "headerFooter"];
+const CHECKBOXES = ["enabled", "landscape", "printBackground", "headerFooter", "expandContent"];
 const SELECTS = ["position", "conflict", "paper"];
 const TEXTS = ["template", "timestampFormat"];
 

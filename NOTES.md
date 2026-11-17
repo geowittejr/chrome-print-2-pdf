@@ -22,6 +22,21 @@ Open questions and decisions made while building, per the plan's instructions.
 - The popup sends its tab id with `save-pdf` so it saves the tab it was opened on; without one, the worker
   falls back to the active tab of the last focused window.
 
+## Expanding collapsed text
+
+- Runs in `printTab` through the debugger that is already attached (`Runtime.evaluate` with `userGesture`), so no
+  `scripting` permission was added. The page code is `expandHiddenContent` in `lib/expand.js`, sent as a string.
+- Order: lift clamps and height limits, open `<details>`, click `aria-expanded="false"` and Bootstrap collapse
+  toggles, click "show more"-style buttons, wait for the DOM to go quiet (500 ms, max 4 s), repeat clicks up to 3
+  rounds, then lift clamps again. Capped at 200 clicks and 15 s overall; a failure is logged and the save goes on.
+- Never clicked: links with a real `href`, submit buttons in forms, `aria-haspopup`, menu/tab/combobox roles,
+  anything inside `nav`, `header`, `footer`, dialogs or toolbars, and labels with words like "load", "comments",
+  "jobs", "less" or "hide" (see `SKIP_LABEL`).
+- Known limits: exclusive accordions close one panel when the next opens, so only the last stays open. The
+  "…see more" button still appears in the PDF after its text is unclamped. Button wording is English only;
+  unclamping works in any language. Unclamping can enlarge overflow-hidden boxes that crop images if they also
+  contain text. The page is not restored after saving.
+
 ## Features To Consider
 
 - **Print to Markdown, HTML, or PDF** - present the option to choose the format.
