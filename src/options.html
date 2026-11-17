@@ -17,7 +17,7 @@
       .field { margin: 10px 0; }
       .field > label { display: block; font-weight: 600; margin-bottom: 4px; }
       .inline { display: flex; align-items: center; gap: 8px; font-weight: normal; }
-      input[type="text"], select, textarea {
+      input[type="text"], input[type="number"], select, textarea {
         font: inherit;
         width: 100%;
         box-sizing: border-box;
@@ -101,6 +101,16 @@
       <label class="inline"><input type="checkbox" id="headerFooter" /> Header and footer</label>
       <label class="inline"><input type="checkbox" id="expandContent" /> Expand collapsed text before saving</label>
       <div class="hint">Lifts "see more" truncation, opens collapsed sections and clicks "show more" buttons on the page. Never follows links to other pages.</div>
+    </div>
+    <div class="field">
+      <label for="expandTimeout">Expand wait (seconds)</label>
+      <input type="number" id="expandTimeout" min="0" max="60" step="1" />
+      <div class="hint">Longest time spent expanding collapsed text before printing anyway.</div>
+    </div>
+    <div class="field">
+      <label for="bottomMargin">Bottom margin for continuous pages (inches)</label>
+      <input type="number" id="bottomMargin" min="0" max="20" step="0.25" />
+      <div class="hint">Extra space below the content. Raise it if saves spill onto a second page; lower it if there is too much blank space at the end.</div>
     </div>
 
     <script type="module" src="options.js"></script>

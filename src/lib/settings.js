@@ -3,17 +3,21 @@
 export const DEFAULTS = Object.freeze({
   enabled: true,
   blocklist: [],
-  folder: "PDFs",
+  folder: "__ChromePrint2PDF",
   template: "{timestamp}.{title}.pdf",
   timestampFormat: "yyyyMMdd-HHmmss",
   conflict: "uniquify",
-  position: "top-center",
+  position: "top-left",
   paper: "letter",
   landscape: false,
   printBackground: true,
   headerFooter: false,
   expandContent: true,
   continuous: true,
+  /** Extra space below the content on a continuous page, in inches. */
+  bottomMargin: 0.5,
+  /** Longest wait for expanding collapsed text before printing anyway, in seconds. */
+  expandTimeout: 5,
 });
 
 /** Paper sizes in inches for Page.printToPDF paperWidth/paperHeight. */
@@ -67,6 +71,22 @@ export function canCapture(url) {
   if (host === "chromewebstore.google.com") return false;
   if (host === "chrome.google.com" && u.pathname.startsWith("/webstore")) return false;
   return true;
+}
+
+/** Bottom margin setting as inches between 0 and 20; anything unusable gives the default. */
+export function bottomMarginInches(value) {
+  return clampNumber(value, 0, 20, DEFAULTS.bottomMargin);
+}
+
+/** Expand wait setting as seconds between 0 and 60; anything unusable gives the default. */
+export function expandSeconds(value) {
+  return clampNumber(value, 0, 60, DEFAULTS.expandTimeout);
+}
+
+function clampNumber(value, min, max, fallback) {
+  const n = typeof value === "string" && value.trim() === "" ? NaN : Number(value);
+  if (value == null || !Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
 }
 
 /** Stored values merged over DEFAULTS, so a missing key never breaks a save. */

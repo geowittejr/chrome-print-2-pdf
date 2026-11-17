@@ -25,7 +25,8 @@ a save dialog on every PDF. Turn it off for one-click saving.
 - **Keyboard**: Alt+Shift+S saves the active tab. Change it at `chrome://extensions/shortcuts`.
 - **Options** (popup → Options): folder, file name template, timestamp format, what to do when the file exists,
   button position, blocked sites, paper size, landscape, backgrounds, header and footer, whether to expand
-  collapsed text before saving (on by default), and whether to save one continuous page (on by default).
+  collapsed text before saving (on by default) and how long to wait for it (default 5 seconds), whether to save
+  one continuous page (on by default), and its bottom margin (default 0.5 inch).
 
 Before printing, the extension expands collapsed text on the page so it ends up in the PDF. It lifts "see more"
 line clamps and height limits, opens `<details>` sections, and clicks collapsed toggles and "show more" buttons.
@@ -35,9 +36,10 @@ expanded after the save.
 By default the PDF is one continuous page as tall as the web page, so there are no page breaks and no blank gaps
 where content was pushed to the next page. The paper size (and landscape) sets the page width; a page wider than
 that gets a wider PDF page rather than being shrunk. Turn off "One continuous page" in Options for normal pages.
+If a save spills onto a second page, raise "Bottom margin for continuous pages" in Options.
 
 Files land at `Downloads/<folder>/<name>.pdf`. With defaults that is, for example,
-`Downloads/PDFs/20261115-130642.Senior-Software-Engineer-Acme-Careers.pdf`.
+`Downloads/__ChromePrint2PDF/20261115-130642.Senior-Software-Engineer-Acme-Careers.pdf`.
 
 While a page is being captured, Chrome shows a "started debugging this browser" bar. That is the
 `chrome.debugger` API at work; the extension detaches as soon as the PDF is generated.

@@ -1,14 +1,21 @@
 // Service worker: message router and the save pipeline.
 import { buildFileName, hostFromUrl, validateFolder } from "./lib/naming.js";
-import { PAPER_SIZES, DEFAULTS, canCapture, getSettings, isBlocked } from "./lib/settings.js";
-import { buildExpandExpression } from "./lib/expand.js";
-import { MARGIN_IN, continuousPaper, countPdfPages, paperDimensions, printablePx } from "./lib/pagesize.js";
+import {
+  PAPER_SIZES,
+  DEFAULTS,
+  bottomMarginInches,
+  canCapture,
+  expandSeconds,
+  getSettings,
+  isBlocked,
+} from "./lib/settings.js";
+import { EXPAND_OPTIONS, buildExpandExpression } from "./lib/expand.js";
+import { MARGIN_IN, continuousPaper, paperDimensions, printablePx } from "./lib/pagesize.js";
 
 const OFFSCREEN_URL = "offscreen.html";
 const DOWNLOAD_TIMEOUT_MS = 5 * 60 * 1000;
-const EXPAND_TIMEOUT_MS = 15 * 1000;
-/** Prints tried for a continuous PDF before keeping one that still has more than one page. */
-const CONTINUOUS_ATTEMPTS = 3;
+/** Time the in-page expand script gets to wrap up after its own deadline before the save stops waiting. */
+const EXPAND_GRACE_MS = 250;
 
 /** Tab ids with a save in progress. */
 const savingTabs = new Set();
@@ -107,7 +114,7 @@ async function printTab(tabId, settings) {
     throw new Error(`Couldn't attach to the page: ${errorText(err)}`);
   }
   try {
-    if (settings.expandContent) await expandContent(target);
+    if (settings.expandContent) await expandContent(target, expandSeconds(settings.expandTimeout));
     const common = {
       displayHeaderFooter: Boolean(settings.headerFooter),
       printBackground: Boolean(settings.printBackground),
@@ -132,33 +139,31 @@ async function printToPdf(target, params) {
 }
 
 /**
- * Print the whole page onto one tall PDF page. The page is measured as it lays out for print at the
- * paper's width, then printed on paper exactly that tall. If the measurement came up short (print
- * layout can differ from what the page reports), the height grows and it prints again.
+ * Print the whole page onto one tall PDF page, in a single print. The page is measured as it lays out
+ * for print at the paper's width, then printed on paper that tall plus the bottom margin setting. Print
+ * layout can differ slightly from the measurement; if saves spill onto a second page, the bottom margin
+ * in Options is raised.
  */
 async function printContinuous(target, paper, settings, common) {
   const { width: minWidthIn, height: fallbackHeightIn } = paperDimensions(paper, settings.landscape);
   const size = await measureForPrint(target, printablePx(minWidthIn), printablePx(fallbackHeightIn));
-  const { paperWidth, paperHeight } = continuousPaper({ minWidthIn, ...size });
-  const params = { ...common, landscape: false, paperWidth, marginTop: MARGIN_IN, marginBottom: MARGIN_IN,
-    marginLeft: MARGIN_IN, marginRight: MARGIN_IN };
-
-  let height = paperHeight;
-  let data;
-  for (let attempt = 1; attempt <= CONTINUOUS_ATTEMPTS; attempt++) {
-    data = await printToPdf(target, { ...params, paperHeight: height });
-    const pages = countPdfPages(atob(data));
-    if (pages <= 1) break;
-    // First retry: a little taller, for a small overflow. Then tall enough for every page printed.
-    height = Math.ceil(attempt === 1 ? height * 1.1 + 1 : height * pages);
-  }
-  return data;
+  const bottomMarginIn = bottomMarginInches(settings.bottomMargin);
+  const { paperWidth, paperHeight } = continuousPaper({ minWidthIn, bottomMarginIn, ...size });
+  return printToPdf(target, {
+    ...common,
+    landscape: false,
+    paperWidth,
+    paperHeight,
+    marginTop: MARGIN_IN,
+    marginBottom: MARGIN_IN,
+    marginLeft: MARGIN_IN,
+    marginRight: MARGIN_IN,
+  });
 }
 
 /**
  * Lay the page out with print styles at `widthPx` CSS pixels wide and return its content size.
- * The emulation is cleared afterwards. On failure it returns one paper page's height, and the retries in
- * printContinuous grow the page from there.
+ * The emulation is cleared afterwards. On failure it returns one paper page's height.
  */
 async function measureForPrint(target, widthPx, fallbackHeightPx) {
   const send = (method, params) => chrome.debugger.sendCommand(target, method, params);
@@ -194,16 +199,17 @@ const MEASURE_EXPRESSION = `(() => {
  * Reveal collapsed text (line clamps, "see more" buttons, <details>, accordions) so it prints.
  * Best effort: a failure or timeout is logged and the save goes ahead with the page as it is.
  */
-async function expandContent(target) {
+async function expandContent(target, seconds) {
+  const deadlineMs = seconds * 1000;
   const evaluate = chrome.debugger.sendCommand(target, "Runtime.evaluate", {
-    expression: buildExpandExpression(),
+    expression: buildExpandExpression({ ...EXPAND_OPTIONS, deadlineMs }),
     awaitPromise: true,
     returnByValue: true,
     userGesture: true,
   });
   let timer;
   const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error("timed out")), EXPAND_TIMEOUT_MS);
+    timer = setTimeout(() => reject(new Error("timed out")), deadlineMs + EXPAND_GRACE_MS);
   });
   try {
     const result = await Promise.race([evaluate, timeout]);

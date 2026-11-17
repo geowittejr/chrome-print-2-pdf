@@ -28,6 +28,8 @@ export const EXPAND_OPTIONS = Object.freeze({
   rounds: 3,
   quietMs: 500,
   maxWaitMs: 4000,
+  /** Stop starting new work after this long; the save goes ahead with what is expanded by then. */
+  deadlineMs: 5000,
   minTextLength: 20,
 });
 
@@ -61,12 +63,15 @@ export function buildExpandExpression(options = EXPAND_OPTIONS) {
  * 3. Click collapsed toggles (aria-expanded="false", Bootstrap collapse toggles).
  * 4. Click buttons labelled like "show more", skipping links, menus, submit buttons and "load more".
  * 5. Wait for the page to stop changing, repeat 3–4 for newly revealed toggles, then repeat 1–2.
+ * Stops waiting and starts no new round once opts.deadlineMs has passed.
  * Resolves to counts of what it changed.
  */
 export async function expandHiddenContent(opts) {
   const EXPAND = new RegExp(opts.expandLabel, "i");
   const SKIP = new RegExp(opts.skipLabel, "i");
   const report = { unclamped: 0, opened: 0, clicked: 0 };
+  const deadline = Date.now() + (opts.deadlineMs ?? Infinity);
+  const remaining = () => deadline - Date.now();
   const clicked = new WeakSet();
 
   const SKIP_TAGS = new Set([
@@ -237,13 +242,13 @@ export async function expandHiddenContent(opts) {
       });
       observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true, characterData: true });
       quiet = setTimeout(done, opts.quietMs);
-      const cap = setTimeout(done, opts.maxWaitMs);
+      const cap = setTimeout(done, Math.max(0, Math.min(opts.maxWaitMs, remaining())));
     });
   }
 
   unclamp();
   openNative();
-  for (let round = 0; round < opts.rounds && report.clicked < opts.maxClicks; round += 1) {
+  for (let round = 0; round < opts.rounds && report.clicked < opts.maxClicks && remaining() > 0; round += 1) {
     const clicks = clickCollapsedToggles() + clickMoreButtons();
     if (clicks === 0) break;
     await settle();

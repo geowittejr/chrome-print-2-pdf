@@ -55,7 +55,7 @@
       setState("idle");
       document.documentElement.append(host);
     }
-    host.dataset.position = position || "top-center";
+    host.dataset.position = position || "top-left";
   }
 
   function hide() {

@@ -1,5 +1,5 @@
 import { buildFileName, validateFolder } from "./lib/naming.js";
-import { DEFAULTS, getSettings, parseBlocklist, saveSettings } from "./lib/settings.js";
+import { DEFAULTS, bottomMarginInches, expandSeconds, getSettings, parseBlocklist, saveSettings } from "./lib/settings.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -9,6 +9,8 @@ const SAMPLE_URL = "https://www.example.com/jobs/123";
 const CHECKBOXES = ["enabled", "landscape", "printBackground", "headerFooter", "expandContent", "continuous"];
 const SELECTS = ["position", "conflict", "paper"];
 const TEXTS = ["template", "timestampFormat"];
+/** Number inputs, each with the function that turns what was typed into the stored value. */
+const NUMBERS = { bottomMargin: bottomMarginInches, expandTimeout: expandSeconds };
 
 async function init() {
   const settings = await getSettings();
@@ -26,6 +28,15 @@ async function init() {
     $(key).addEventListener("input", (e) => {
       saveSettings({ [key]: e.target.value });
       updatePreview();
+    });
+  }
+
+  for (const [key, parse] of Object.entries(NUMBERS)) {
+    $(key).value = parse(settings[key]);
+    $(key).addEventListener("change", (e) => {
+      const value = parse(e.target.value);
+      e.target.value = value;
+      saveSettings({ [key]: value });
     });
   }
 

@@ -28,7 +28,8 @@ Open questions and decisions made while building, per the plan's instructions.
   `scripting` permission was added. The page code is `expandHiddenContent` in `lib/expand.js`, sent as a string.
 - Order: lift clamps and height limits, open `<details>`, click `aria-expanded="false"` and Bootstrap collapse
   toggles, click "show more"-style buttons, wait for the DOM to go quiet (500 ms, max 4 s), repeat clicks up to 3
-  rounds, then lift clamps again. Capped at 200 clicks and 15 s overall; a failure is logged and the save goes on.
+  rounds, then lift clamps again. Capped at 200 clicks and the "Expand wait" option (default 5 s): no new round or wait starts after it, and the
+  save stops waiting 250 ms later. A failure is logged and the save goes on.
 - Never clicked: links with a real `href`, submit buttons in forms, `aria-haspopup`, menu/tab/combobox roles,
   anything inside `nav`, `header`, `footer`, dialogs or toolbars, and labels with words like "load", "comments",
   "jobs", "less" or "hide" (see `SKIP_LABEL`).
@@ -45,8 +46,8 @@ Open questions and decisions made while building, per the plan's instructions.
   viewport to the paper's printable width (`Emulation.setDeviceMetricsOverride`), measure the document height
   in the page, clear both, then `Page.printToPDF` with that height and 0.4 in margins. `lib/pagesize.js` holds
   the size maths.
-- Print layout can differ from the measurement, so the worker counts `/Type /Page` objects in the result. With
-  more than one page it prints again taller (x1.1 + 1 in, then x page count), at most 3 prints in all.
+- Prints once, for speed. Print layout can differ from the measurement, so the page gets the "Bottom margin"
+  option (default 0.5 in) of extra height. If saves spill onto a second page, raise it in Options.
 - Known limits: elements sized in `vh` grow to the tall page's height in print, which can leave blank space or
   keep a second page. Very tall pages (over 200 in) are valid PDF but some viewers, Acrobat among them, cap
   page size at 200 in. Pages that scroll inside an inner container rather than the document still print only
